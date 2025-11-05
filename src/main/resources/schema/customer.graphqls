@@ -1,0 +1,56 @@
+# ======================
+# Root Query
+# ======================
+type Query {
+    customers: [Customer]
+    customerById(id: ID!): Customer
+}
+
+# ======================
+# Root Mutation
+# ======================
+type Mutation {
+    createCustomer(input: CustomerInput!): Customer
+    updateCustomer(input: UpdateCustomerInput!): Customer
+    deleteCustomer(id: ID!): Boolean
+}
+
+# ======================
+# Root Subscription
+# ======================
+type Subscription {
+    customerEvents: CustomerEvent
+}
+
+type CustomerEvent{
+    id: ID!
+    msg: String
+}
+# ======================
+# Types
+# ======================
+type Customer {
+    id: ID!
+    firstName: String!
+    lastName: String!
+    email: String!
+    phone: String
+    createdAt: String
+}
+
+# ======================
+# Inputs
+# ======================
+input CustomerInput {
+    firstName: String!
+    lastName: String!
+    email: String!
+    phone: String
+}
+
+input UpdateCustomerInput {
+    id: ID!
+    firstName: String
+    lastName: String
+    phone: String
+}

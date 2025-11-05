@@ -1,0 +1,155 @@
+# 🧩 Customer GraphQL Service (`customer-ql-svc`)
+
+A **Spring Boot Reactive GraphQL** microservice for managing customer data using **MongoDB** and **Project Reactor (Flux/Mono)**.  
+Includes support for **real-time subscriptions** via WebSocket and **query caching** for optimized GraphQL performance.
+
+---
+
+## 🚀 Features
+
+- **Reactive GraphQL API** using Spring Boot 3 and GraphQL Java.
+- **MongoDB (Reactive)** repository with `ReactiveMongoRepository`.
+- **Reactive Streams (Flux/Mono)** for non-blocking I/O.
+- **GraphQL Subscriptions** for real-time updates using WebSocket.
+- **In-memory GraphQL Query Cache** (`PreparsedDocumentProvider`).
+- **Event-driven architecture** using Reactor `Sinks.Many` for emitting events.
+- **Auto reloadable schema** (`classpath:schema/`).
+
+---
+
+## 🧱 Project Structure
+
+```
+customer-ql-svc/
+├── src/main/java/com/alinma/customer/qlsvc/
+│   ├── config/
+│   │   └── GraphQlCachingConfig.java
+│   ├── controller/
+│   │   └── CustomerGraphQLController.java
+│   ├── repository/
+│   │   └── CustomerRepository.java
+│   ├── service/
+│   │   ├── EventService.java
+│   │   └── impl/CustomerServiceImpl.java
+│   ├── model/
+│   │   ├── documents/Customer.java
+│   │   ├── dto/CustomerDto.java
+│   │   └── dto/CustomerEvent.java
+│   └── mapper/CustomerMapper.java
+│
+├── src/main/resources/
+│   ├── schema/customer.graphqls
+│   └── application.yml
+│
+└── pom.xml
+```
+
+---
+
+## ⚙️ Configuration
+
+```yaml
+server:
+  port: 8082
+
+spring:
+  application:
+    name: customer-ql-svc
+
+  data:
+    mongodb:
+      uri: mongodb://admin:admin@localhost:27017/customerdb?authSource=admin
+
+  graphql:
+    schema:
+      locations: classpath:schema/
+    graphiql:
+      enabled: true
+      path: /graphiql
+    path: /graphql
+    websocket:
+      path: /graphql
+```
+
+---
+
+## 📡 Example Queries
+
+### Query All Customers
+```graphql
+query {
+  customers {
+    id
+    firstName
+    lastName
+    email
+    phone
+    createdAt
+  }
+}
+```
+
+### Create Customer
+```graphql
+mutation {
+  createCustomer(input: {
+    firstName: "Nasruddin",
+    lastName: "Khan",
+    email: "nasruddinkhan@test.com",
+    phone: ""
+  }) {
+    id
+    firstName
+    email
+  }
+}
+```
+
+### Subscribe to Customer Events
+```graphql
+subscription {
+  customerEvents {
+    id
+    msg
+  }
+}
+```
+
+---
+
+## 🧪 Running the Application
+
+### Start MongoDB
+```bash
+docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin mongo
+```
+
+### Run the Service
+```bash
+mvn spring-boot:run
+```
+
+### Access GraphiQL
+[http://localhost:8082/graphiql](http://localhost:8082/graphiql)
+
+---
+
+## 🧰 Tech Stack
+
+| Layer | Technology |
+|--------|-------------|
+| Language | Java 17+ |
+| Framework | Spring Boot 3.x |
+| GraphQL | Spring GraphQL Starter |
+| Reactive | Reactor (Flux/Mono) |
+| Database | MongoDB (Reactive) |
+| Caching | PreparsedDocumentProvider |
+| Build Tool | Maven |
+| API UI | GraphiQL |
+
+---
+
+## 👨‍💻 Author
+**Nasruddin Khan**  
+Backend Developer — Alinma Bank  
+💡 Specialized in Reactive Spring Boot, Microservices, and GraphQL APIs.
