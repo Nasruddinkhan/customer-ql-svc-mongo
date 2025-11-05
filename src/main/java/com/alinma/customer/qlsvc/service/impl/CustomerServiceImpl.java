@@ -1,5 +1,6 @@
 package com.alinma.customer.qlsvc.service.impl;
 
+import com.alinma.customer.qlsvc.exception.CustomerNotFoundException;
 import com.alinma.customer.qlsvc.mapper.CustomerMapper;
 import com.alinma.customer.qlsvc.model.documents.Customer;
 import com.alinma.customer.qlsvc.model.dto.CustomerDto;
@@ -32,6 +33,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Mono<CustomerDto> getById(String id) {
         return repository.findById(id)
+                .switchIfEmpty(Mono.error(new CustomerNotFoundException("Customer not found with id: " + id)))
                 .map(customerMapper::toDto);
     }
 

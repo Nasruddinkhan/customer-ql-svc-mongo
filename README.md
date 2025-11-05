@@ -31,6 +31,9 @@ customer-ql-svc/
 │   ├── service/
 │   │   ├── EventService.java
 │   │   └── impl/CustomerServiceImpl.java
+│   ├── exception/
+│   │   ├── CustomerNotFoundException.java
+│   │   └── GraphQLExceptionResolver.java
 │   ├── model/
 │   │   ├── documents/Customer.java
 │   │   ├── dto/CustomerDto.java
@@ -73,30 +76,104 @@ spring:
 
 ---
 
-## 📡 Example Queries
+## ⚡ Exception Handling
 
-### Query All Customers
-```graphql
-query {
-  customers {
-    id
-    firstName
-    lastName
-    email
-    phone
-    createdAt
-  }
+### 📁 `exception/CustomerNotFoundException.java`
+```java
+package com.alinma.customer.qlsvc.exception;
+
+public class CustomerNotFoundException extends RuntimeException {
+    public CustomerNotFoundException(String msg) {
+        super(msg);
+    }
 }
 ```
 
-### Create Customer
+### ⚙️ `exception/GraphQLExceptionResolver.java`
+```java
+package com.alinma.customer.qlsvc.exception;
+
+import graphql.GraphQLError;
+import graphql.GraphqlErrorBuilder;
+import graphql.schema.DataFetchingEnvironment;
+import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Optional;
+
+@Component
+public class GraphQLExceptionResolver extends DataFetcherExceptionResolverAdapter {
+
+    @Override
+    protected GraphQLError resolveToSingleError(Throwable ex, DataFetchingEnvironment env) {
+
+        if (ex instanceof CustomerNotFoundException) {
+            return GraphqlErrorBuilder.newError(env)
+                    .message(ex.getMessage())
+                    .errorType(graphql.ErrorType.DataFetchingException)
+                    .build();
+        }
+
+        if (ex instanceof ResponseStatusException rse) {
+            return GraphqlErrorBuilder.newError(env)
+                    .message(rse.getReason())
+                    .errorType(graphql.ErrorType.ValidationError)
+                    .build();
+        }
+
+        return GraphqlErrorBuilder.newError(env)
+                .message("Internal server error: " + Optional.ofNullable(ex.getMessage()).orElse("Unexpected error"))
+                .errorType(graphql.ErrorType.ExecutionAborted)
+                .build();
+    }
+}
+```
+
+### 🧩 Example Usage
+
+```java
+@Override
+public Mono<CustomerDto> getById(String id) {
+    return repository.findById(id)
+            .switchIfEmpty(Mono.error(new CustomerNotFoundException("Customer not found with id: " + id)))
+            .map(customerMapper::toDto);
+}
+```
+
+**GraphQL Query:**
+```graphql
+query {
+  customerById(id: "999")
+}
+```
+
+**Response:**
+```json
+{
+  "data": { "customerById": null },
+  "errors": [
+    {
+      "message": "Customer not found with id: 999",
+      "path": ["customerById"],
+      "extensions": { "classification": "DataFetchingException" }
+    }
+  ]
+}
+```
+
+---
+
+## 📡 Example Queries
+
+### Create a New Customer
 ```graphql
 mutation {
   createCustomer(input: {
     firstName: "Nasruddin",
     lastName: "Khan",
-    email: "nasruddinkhan@test.com",
-    phone: ""
+    email: "nasruddinkhan@alinma.com",
+    phone: "555-1234"
   }) {
     id
     firstName
@@ -105,7 +182,7 @@ mutation {
 }
 ```
 
-### Subscribe to Customer Events
+### Subscribe to Real-Time Events
 ```graphql
 subscription {
   customerEvents {
@@ -121,7 +198,7 @@ subscription {
 
 ### Start MongoDB
 ```bash
-docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin mongo
+docker run -d --name mongo   -p 27017:27017   -e MONGO_INITDB_ROOT_USERNAME=admin   -e MONGO_INITDB_ROOT_PASSWORD=admin   mongo
 ```
 
 ### Run the Service
@@ -129,8 +206,8 @@ docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e
 mvn spring-boot:run
 ```
 
-### Access GraphiQL
-[http://localhost:8082/graphiql](http://localhost:8082/graphiql)
+### Open GraphiQL
+🔗 [http://localhost:8082/graphiql](http://localhost:8082/graphiql)
 
 ---
 
@@ -140,12 +217,21 @@ mvn spring-boot:run
 |--------|-------------|
 | Language | Java 17+ |
 | Framework | Spring Boot 3.x |
-| GraphQL | Spring GraphQL Starter |
-| Reactive | Reactor (Flux/Mono) |
-| Database | MongoDB (Reactive) |
-| Caching | PreparsedDocumentProvider |
+| GraphQL | Spring GraphQL |
+| Reactive | Project Reactor |
+| Database | MongoDB Reactive |
+| Error Handling | DataFetcherExceptionResolver |
 | Build Tool | Maven |
-| API UI | GraphiQL |
+| API Explorer | GraphiQL |
+
+---
+
+## 🧩 Future Enhancements
+
+- Add **JWT-based authentication** for GraphQL.
+- Introduce **Kafka-based event streaming**.
+- Add **pagination** for customer list queries.
+- Include **unit and integration tests**.
 
 ---
 
