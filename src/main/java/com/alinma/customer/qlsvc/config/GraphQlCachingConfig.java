@@ -24,8 +24,7 @@ public class GraphQlCachingConfig {
     public PreparsedDocumentProvider preparsedDocumentProvider() {
         Map<String, PreparsedDocumentEntry> cache = new ConcurrentHashMap<>();
         return (executionInput, parseAndValidateFunction) ->
-                CompletableFuture.supplyAsync(() ->
-                        cache.computeIfAbsent(executionInput.getQuery(), query -> {
+                CompletableFuture.supplyAsync(() -> cache.computeIfAbsent(executionInput.getQuery(), query -> {
                             log.debug("Cache miss for GraphQL query. Parsing and validating...");
                             PreparsedDocumentEntry entry = parseAndValidateFunction.apply(executionInput);
                             log.debug("Query cached successfully");
